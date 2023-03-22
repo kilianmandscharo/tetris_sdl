@@ -1,12 +1,9 @@
+#include <SDL2/SDL.h>
 #include <SDL2/SDL_render.h>
 #include <SDL2/SDL_timer.h>
-#include <stdint.h>
-#define __timespec_defined 1
-#define __timeval_defined 1
-#define __itimerspec_defined 1
-#include <SDL2/SDL.h> /* All SDL App's need this */
 #include <math.h>
 #include <stdbool.h>
+#include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <unistd.h>
@@ -22,11 +19,6 @@
 SDL_Window *screen = NULL;
 SDL_Renderer *renderer;
 SDL_Event event;
-
-typedef struct Block {
-  int x;
-  int y;
-} Block;
 
 int keypressed;
 
@@ -49,6 +41,10 @@ void move_shape_one_down();
 void draw_shape();
 int shape_collision();
 void render();
+void rotate_shape();
+void clear_lines();
+bool line_filled(int line);
+void move_lines(int line);
 
 int main(int argc, char *args[]) {
   init();
@@ -56,6 +52,48 @@ int main(int argc, char *args[]) {
   game_loop();
   finish();
   return 0;
+}
+
+void move_lines(int line) {
+  for (int row = line; row > 0; row--) {
+    for (int col = 0; col < BOARD_WIDTH; col++) {
+      board[row][col] = board[row - 1][col];
+    }
+  }
+}
+
+bool line_filled(int line) {
+  for (int i = 0; i < BOARD_WIDTH; i++) {
+    if (board[line][i] == 0) {
+      return false;
+    }
+  }
+  return true;
+}
+
+void clear_lines() {
+  for (int i = 0; i < BOARD_HEIGHT; i++) {
+    if (line_filled(i)) {
+      move_lines(i);
+    }
+  }
+}
+
+void rotate_shape() {
+  double angle = M_PI / 2;
+  float s = sin(angle);
+  float c = cos(angle);
+  float origin_x = shape[0][0];
+  float origin_y = shape[0][1];
+
+  for (int i = 0; i < 4; i++) {
+    float x = shape[i][0] - origin_x;
+    float y = shape[i][1] - origin_y;
+    float xnew = c * x - s * y;
+    float ynew = s * x + c * y;
+    shape[i][0] = xnew + origin_x;
+    shape[i][1] = ynew + origin_y;
+  }
 }
 
 void draw_shape() {
@@ -96,6 +134,7 @@ int shape_collision() {
     int y = shape[i][1];
     board[y][x] = shape_type;
   }
+  clear_lines();
   new_random_shape();
   return 1;
 }
@@ -147,16 +186,18 @@ void move_shape_right() {
 void new_random_shape() {
   shape_type = rand() % 7 + 1;
   switch (shape_type) {
+  // T shape
   case 1:
-    shape[0][0] = 4;
-    shape[0][1] = 0;
-    shape[1][0] = 5;
-    shape[1][1] = 0;
+    shape[0][0] = 5;
+    shape[0][1] = 1;
+    shape[1][0] = 4;
+    shape[1][1] = 1;
     shape[2][0] = 6;
-    shape[2][1] = 0;
+    shape[2][1] = 1;
     shape[3][0] = 5;
-    shape[3][1] = 1;
+    shape[3][1] = 0;
     break;
+  // I shape
   case 2:
     shape[0][0] = 4;
     shape[0][1] = 0;
@@ -167,26 +208,29 @@ void new_random_shape() {
     shape[3][0] = 7;
     shape[3][1] = 0;
     break;
+  // J shape
   case 3:
-    shape[0][0] = 4;
-    shape[0][1] = 0;
+    shape[0][0] = 5;
+    shape[0][1] = 1;
     shape[1][0] = 4;
     shape[1][1] = 1;
-    shape[2][0] = 5;
-    shape[2][1] = 1;
+    shape[2][0] = 4;
+    shape[2][1] = 0;
     shape[3][0] = 6;
     shape[3][1] = 1;
     break;
+  // L shape
   case 4:
-    shape[0][0] = 4;
+    shape[0][0] = 5;
     shape[0][1] = 1;
-    shape[1][0] = 5;
+    shape[1][0] = 4;
     shape[1][1] = 1;
     shape[2][0] = 6;
     shape[2][1] = 1;
     shape[3][0] = 6;
     shape[3][1] = 0;
     break;
+  // O shape
   case 5:
     shape[0][0] = 5;
     shape[0][1] = 0;
@@ -197,23 +241,25 @@ void new_random_shape() {
     shape[3][0] = 6;
     shape[3][1] = 1;
     break;
+  // S shape
   case 6:
-    shape[0][0] = 4;
+    shape[0][0] = 5;
     shape[0][1] = 1;
     shape[1][0] = 5;
     shape[1][1] = 0;
-    shape[2][0] = 5;
+    shape[2][0] = 4;
     shape[2][1] = 1;
     shape[3][0] = 6;
     shape[3][1] = 0;
     break;
+  // Z shape
   case 7:
-    shape[0][0] = 4;
-    shape[0][1] = 0;
+    shape[0][0] = 5;
+    shape[0][1] = 1;
     shape[1][0] = 5;
     shape[1][1] = 0;
-    shape[2][0] = 5;
-    shape[2][1] = 1;
+    shape[2][0] = 4;
+    shape[2][1] = 0;
     shape[3][0] = 6;
     shape[3][1] = 1;
     break;
@@ -314,7 +360,7 @@ void game_loop() {
   int frame = 0;
   while (gameRunning) {
     // uint64_t start = SDL_GetPerformanceCounter();
-    if (frame == 60) {
+    if (frame == 30) {
       frame = 0;
       move_shape_one_down();
     }
@@ -337,6 +383,9 @@ void game_loop() {
           break;
         case SDLK_DOWN:
           move_shape_down();
+          break;
+        case SDLK_UP:
+          rotate_shape();
           break;
         default:
           break;
