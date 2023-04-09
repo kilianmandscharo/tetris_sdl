@@ -20,11 +20,21 @@ SDL_Window *screen = NULL;
 SDL_Renderer *renderer;
 SDL_Event event;
 
+enum ShapeType {
+  T_SHAPE = 1,
+  I_SHAPE,
+  J_SHAPE,
+  L_SHAPE,
+  O_SHAPE,
+  S_SHAPE,
+  Z_SHAPE,
+};
+
 int keypressed;
 
 int board[BOARD_HEIGHT][BOARD_WIDTH];
 int shape[4][2];
-int shape_type;
+enum ShapeType shape_type;
 
 uint8_t colors[8][3];
 
@@ -80,11 +90,21 @@ void clear_lines() {
 }
 
 void rotate_shape() {
+  if (shape_type == O_SHAPE) {
+    return;
+  }
+
   double angle = M_PI / 2;
   float s = sin(angle);
   float c = cos(angle);
   float origin_x = shape[0][0];
   float origin_y = shape[0][1];
+
+  // fix I_SHAPE rotation
+  if (shape_type == I_SHAPE) {
+    origin_x = shape[0][0] + 0.5;
+    origin_y = shape[0][1] + 0.5;
+  }
 
   for (int i = 0; i < 4; i++) {
     float x = shape[i][0] - origin_x;
@@ -186,8 +206,7 @@ void move_shape_right() {
 void new_random_shape() {
   shape_type = rand() % 7 + 1;
   switch (shape_type) {
-  // T shape
-  case 1:
+  case T_SHAPE:
     shape[0][0] = 5;
     shape[0][1] = 1;
     shape[1][0] = 4;
@@ -197,19 +216,17 @@ void new_random_shape() {
     shape[3][0] = 5;
     shape[3][1] = 0;
     break;
-  // I shape
-  case 2:
-    shape[0][0] = 4;
+  case I_SHAPE:
+    shape[0][0] = 5;
     shape[0][1] = 0;
-    shape[1][0] = 5;
+    shape[1][0] = 4;
     shape[1][1] = 0;
     shape[2][0] = 6;
     shape[2][1] = 0;
     shape[3][0] = 7;
     shape[3][1] = 0;
     break;
-  // J shape
-  case 3:
+  case J_SHAPE:
     shape[0][0] = 5;
     shape[0][1] = 1;
     shape[1][0] = 4;
@@ -219,8 +236,7 @@ void new_random_shape() {
     shape[3][0] = 6;
     shape[3][1] = 1;
     break;
-  // L shape
-  case 4:
+  case L_SHAPE:
     shape[0][0] = 5;
     shape[0][1] = 1;
     shape[1][0] = 4;
@@ -230,8 +246,7 @@ void new_random_shape() {
     shape[3][0] = 6;
     shape[3][1] = 0;
     break;
-  // O shape
-  case 5:
+  case O_SHAPE:
     shape[0][0] = 5;
     shape[0][1] = 0;
     shape[1][0] = 5;
@@ -241,8 +256,7 @@ void new_random_shape() {
     shape[3][0] = 6;
     shape[3][1] = 1;
     break;
-  // S shape
-  case 6:
+  case S_SHAPE:
     shape[0][0] = 5;
     shape[0][1] = 1;
     shape[1][0] = 5;
@@ -252,8 +266,7 @@ void new_random_shape() {
     shape[3][0] = 6;
     shape[3][1] = 0;
     break;
-  // Z shape
-  case 7:
+  case Z_SHAPE:
     shape[0][0] = 5;
     shape[0][1] = 1;
     shape[1][0] = 5;
